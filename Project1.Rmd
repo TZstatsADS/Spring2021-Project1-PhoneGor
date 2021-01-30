@@ -1,0 +1,193 @@
+Voting Pattern of Women in United States
+
+It has been more than a century since women were granted the right to vote in 1919, and women has been playing an important role in political affairs. The following data story focuses on the voting pattern of women from 1948 to 2016, supported by the time series study data of ANES.
+
+
+I. Participation of Women
+
+Women’s passion of participating in the election has significantly increased over the past 68 years. In 1952, only 69.3% of female registered and voted, which was 10% less than that of male. 22.6% of female did not registered, while only 14.1% of male did not. However, the gap has been shrinking over time. In 2004, voting rate of female took the lead for the first time. 80.3% of female voted while 76.8% of male did so. Since then, female has higher voting rate than male.
+
+
+```{r include=FALSE}
+library(haven)
+library(tidyverse)
+anes_dat <- read_sav("data/anes_timeseries_cdf.sav")
+```
+
+```{r include=FALSE}
+Election_years=as.character(seq(1952, 2016, 4))
+anes_use=anes_dat%>%
+mutate(
+year=as_factor(VCF0004),
+age=as_factor(VCF0102),
+education=as_factor(VCF0110),
+income=as_factor(VCF0114),
+turnout=as_factor(VCF0703),
+vote=as_factor(VCF0706),
+race=as_factor(VCF0105a),
+gender=as_factor(VCF0104),
+women_eqrl=as_factor(VCF0834),
+women_stayout=as_factor(VCF0836),
+abortion=as_factor(VCF0837),
+gun = as_factor(VCF9239)
+)%>%
+filter(year %in% Election_years)
+anes_use = anes_use%>%select(year, turnout, vote, race, gender, women_eqrl, women_stayout, abortion, gun, age, education, income)
+save(anes_use, file="output/data_use.RData")
+```
+
+```{r echo=FALSE}
+load(file="output/data_use.RData")
+anes_to_gender_year = anes_use %>%
+filter(!is.na(gender) & !is.na(turnout))%>%
+group_by(year, gender)%>%
+count(turnout)%>%
+group_by(year, gender)%>%
+mutate(
+prop=n/sum(n)
+)
+ggplot(anes_to_gender_year,
+aes(x=year, y=prop, fill=turnout)) +
+geom_bar(stat="identity", colour="black") + facet_wrap(~gender, ncol=1) + theme_bw()+
+theme(axis.text.x = element_text(angle = 90))+
+scale_fill_brewer(palette="Blues")+
+labs(title="Participation by Gender in the Election over the Years")
+```
+
+
+II. Which Party Did Female Favor?
+
+For a long time, voting pattern of female was similar to that of male. This situation has changed since 1968, when female started to show more favor to the Democrats. The percentage of female who voted for a Democrat candidate has been higher than that of male since 1968. After 1996, more than half of the female interviewed voted a Democrat candidate.
+
+
+```{r echo=FALSE}
+anes_vote_gender_year = anes_use %>%
+filter(!is.na(gender) & !is.na(vote))%>%
+filter(vote!="7. Did not vote or voted but not for president (exc.1972)")%>%
+group_by(year, gender)%>%
+count(vote)%>%
+group_by(year, gender)%>%
+mutate(
+prop=n/sum(n)
+)
+#%>%
+# filter(vote == "1. Democrat" | vote == "2. Republican")
+ggplot(anes_vote_gender_year,
+aes(x=year, y=prop, fill=vote)) +
+geom_bar(stat="identity", colour="black")+
+scale_fill_manual(values=c("dodgerblue3", "firebrick2", "gold1", "lightgoldenrod1"))+
+facet_wrap(~gender, ncol=1) +
+theme(axis.text.x = element_text(angle = 90))+
+labs(title="Vote by Gender over the Years")
+```
+
+
+III. Pattern Analysis
+
+
+What are the main reasons for the pattern of voting by female? To answer this question, let’s figure out what are the core demands of female. One of the bet is gender equality, in terms of equal pay, discrimination on work, social recognition, etc. The following figure shows women’s opinion towards equal role over the years. Back in 1972, only 33.2% of female believed that female should have an equal role as men, and the trend has dramatically increased to 70.6% in 2008.
+
+
+
+```{r echo=FALSE}
+anes_women_eqrl_year = anes_use %>%
+filter(!is.na(gender) & !is.na(vote) & !is.na(women_eqrl))%>%
+filter(gender == '2. Female' & vote!="7. Did not vote or voted but not for president (exc.1972)")%>%
+group_by(year, gender)%>%
+count(women_eqrl)%>%
+group_by(year, gender)%>%
+mutate(
+prop=n/sum(n)
+)
+#%>%
+# filter(vote == "1. Democrat" | vote == "2. Republican")
+ggplot(anes_women_eqrl_year,
+aes(x=year, y=prop, fill=women_eqrl)) +
+geom_bar(stat="identity", colour="black")+
+scale_fill_manual(values=c("dodgerblue3", "firebrick2", "gold1", "lightgoldenrod1", "#999999", "#E69F00", "#56B4E9", "green"))+
+theme(axis.text.x = element_text(angle = 90))+
+labs(title="Women's Opinion Towards Equal Role Over the Years")
+```
+
+
+In terms of political participation, most of the female did not believed that women should stay away from politics even in 1952, taking up 71.1% of the total interviewees. In 1972, the percentage increased to 84.3%
+
+
+```{r echo=FALSE}
+anes_gender_stayout_year = anes_use %>%
+filter(!is.na(gender) & !is.na(vote) & !is.na(women_stayout))%>%
+filter(vote!="7. Did not vote or voted but not for president (exc.1972)")%>%
+group_by(year, gender)%>%
+count(women_stayout)%>%
+group_by(year, gender)%>%
+mutate(
+prop=n/sum(n)
+)
+#%>%
+# filter(vote == "1. Democrat" | vote == "2. Republican")
+ggplot(anes_gender_stayout_year,
+aes(x=year, y=prop, fill=women_stayout)) +
+geom_bar(stat="identity", colour="black")+
+scale_fill_manual(values=c("dodgerblue3", "firebrick2", "gold1", "lightgoldenrod1", "#999999", "#E69F00", "#56B4E9", "green"))+
+facet_wrap(~gender, ncol=1) +
+theme(axis.text.x = element_text(angle = 90))+
+labs(title="Should Women Stay Away From Politics?")
+```
+
+
+Abortion is another concern of female. During 1972, 1976 and 1980, interviewees opinions towards abortion did not changed a lot, and there was no significant discrepancy between men and women. Less than twenty percent of interviewees believed that abortion should never be permitted, and about 25% argued that abortion should never be forbidden.
+
+
+```{r echo=FALSE}
+anes_gender_abortion_year = anes_use %>%
+filter(!is.na(gender) & !is.na(vote) & !is.na(abortion))%>%
+filter(vote!="7. Did not vote or voted but not for president (exc.1972)")%>%
+group_by(year, gender)%>%
+count(abortion)%>%
+group_by(year, gender)%>%
+mutate(
+prop=n/sum(n)
+)
+#%>%
+# filter(vote == "1. Democrat" | vote == "2. Republican")
+ggplot(anes_gender_abortion_year,
+aes(x=year, y=prop, fill=abortion)) +
+geom_bar(stat="identity", colour="black")+
+scale_fill_manual(values=c("dodgerblue3", "firebrick2", "gold1", "lightgoldenrod1", "#999999", "#E69F00", "#56B4E9", "green"))+
+facet_wrap(~gender, ncol=1) +
+theme(axis.text.x = element_text(angle = 90))+
+labs(title="Opinion Towards Abortion Over the Years")
+```
+
+
+Iv. Differences within Female
+
+This section aims to show the differences of voting patterns within female.
+
+The figure below shows women’s vote by age group, which indicates that younger female are more likely to favor Democrat candidates than older female. Since Democrat is more liberal, the elders might not accept the policies they proposed.
+
+
+```{r echo=FALSE}
+anes_women_age_year = anes_use %>%
+filter(!is.na(gender) & !is.na(vote) & !is.na(age))%>%
+filter(gender == '2. Female' & vote!="7. Did not vote or voted but not for president (exc.1972)")%>%
+group_by(year, age)%>%
+count(vote)%>%
+group_by(year, age)%>%
+mutate(
+prop=n/sum(n)
+)
+#%>%
+# filter(vote == "1. Democrat" | vote == "2. Republican")
+ggplot(anes_women_age_year,
+aes(x=year, y=prop, fill=vote)) +
+geom_bar(stat="identity", colour="black")+
+scale_fill_manual(values=c("dodgerblue3", "firebrick2", "gold1", "lightgoldenrod1", "#999999", "#E69F00", "#56B4E9", "green"))+
+facet_wrap(~age, ncol=1) +
+theme(axis.text.x = element_text(angle = 90))+
+labs(title="Women's Vote by Age Group Over the Years")
+```
+
+V. Conclusion
+
+As we can see from the above data, female voters show passion on their roles on politics and the society. Democrat candidates are usually more liberal and tend to promote emerging ideology, which makes female voters more interested in the Democrats.
